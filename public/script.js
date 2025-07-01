@@ -633,6 +633,35 @@ function registerUser() {
     showProblemListView();
     startTimer();
     saveStateToLocalStorage();
+
+    // Enviar datos de registro al servidor
+    const groupName = GROUPS[groupId]?.name || groupId; // Obtener el nombre del grupo
+    fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, groupId, groupName })
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('Error al registrar el grupo en el servidor:', response.statusText);
+            // Considerar mostrar un error al usuario aquí si es crítico
+        }
+        // Siempre intentar parsear JSON, incluso para errores, por si el servidor envía detalles del error.
+        return response.json().catch(err => {
+            // Si el parseo de JSON falla y la respuesta no fue ok, lanzar un error más informativo.
+            if (!response.ok) throw new Error(`Error del servidor: ${response.statusText} (sin cuerpo JSON)`);
+            // Si la respuesta fue ok pero el JSON falló, podría ser un problema, o el servidor no devuelve JSON en éxito.
+            console.warn("Respuesta OK pero no se pudo parsear JSON de /api/register", err);
+            return {}; // Devolver objeto vacío para no romper la cadena de promesas.
+        });
+    })
+    .then(data => {
+        console.log('Respuesta de /api/register:', data);
+        updateLeaderboardFromServer(); // Actualizar el leaderboard inmediatamente después del registro
+    })
+    .catch(error => {
+        console.error('Error en fetch /api/register o procesamiento de respuesta:', error);
+    });
 }
 
 
